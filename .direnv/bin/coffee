@@ -1,0 +1,31 @@
+#!/usr/bin/env sh 
+
+_DIR=$(dirname $(realpath $0))
+_ROOT=$_DIR/../..
+
+while getopts c: flag
+do
+  case "${flag}" in
+    c) file=${OPTARG};;
+  esac
+done
+
+if [ $file ]; then
+  filename=$file
+else
+  filename=$1
+fi
+
+filepath=$(realpath $filename)
+
+js="$(npx coffee $_DIR/coffee.coffee $filepath)"
+
+if [ $file ]; then
+echo "$js"
+else
+npm run prepare > /dev/null
+jsdir=$(node -e "path=require('path');console.log(path.dirname(process.argv[1].replace('/src/','/lib/')))" -- $filepath)
+cd $jsdir
+deno eval "$js" --unstable --import-map=$_ROOT/import.map.json 
+fi
+
